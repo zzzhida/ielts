@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>雅思冲刺簿</title>
+<meta name="description" content="雅思 6.0 → 7.5 备考进度：打卡、模考走势、写作批改、间隔复习卡和资料库。离线可用，可用 GitHub Gist 在多台设备间同步。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#1E5A6E" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E161A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="雅思冲刺簿">
+<style>
+/* Layout: a test-report-form strip on top, one working column of cards, bottom tab bar like a phone app */
+:root{
+  --bg:#EBEFEE; --surface:#F9FBFA; --surface-2:#E1E7E5; --ink:#132029; --muted:#56676D; --line:#CDD6D3;
+  --accent:#1E5A6E; --accent-ink:#F9FBFA; --pencil:#E2B22A; --pencil-soft:#F6E7B4;
+  --good:#2E7A4D; --warn:#AE5F17; --bad:#B23B3B;
+  --cL:#2B66AE; --cR:#2C8A66; --cW:#B0532B; --cS:#7650AB; --cV:#86892B;
+  --f-body:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --f-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  --r:10px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0E161A; --surface:#152127; --surface-2:#1C2B32; --ink:#E1EBE9; --muted:#8EA1A5; --line:#273841;
+  --accent:#71B9CF; --accent-ink:#0E161A; --pencil:#E6C04B; --pencil-soft:#4A3F1C;
+  --good:#5DB984; --warn:#E0954F; --bad:#E06A6A;
+  --cL:#6FA3E6; --cR:#5CC39B; --cW:#E58A60; --cS:#A98BDB; --cV:#C2C55A; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+.app{max-width:760px;margin:0 auto;padding-block:14px calc(96px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3{text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:13px}
+
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.top h1{font-size:22px;font-weight:800;letter-spacing:.01em}
+.top .sub{font-size:12px;color:var(--muted)}
+.top .grow{flex:1;min-width:0}
+.sync{font-size:12px;display:inline-flex;align-items:center;gap:6px;color:var(--muted);border:0;background:none;padding:0;cursor:pointer}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.sync.on i{background:var(--good)} .sync.err i{background:var(--bad)}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:1.8}
+
+.trf{border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);margin-bottom:16px}
+.trf-head{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;border-bottom:1px solid var(--ink);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--f-mono)}
+.trf-row{display:grid;grid-template-columns:repeat(4,1fr) 1.25fr}
+.band{padding:8px 10px 10px;border-right:1px solid var(--line);min-width:0}
+.band:last-child{border-right:0;background:var(--pencil-soft)}
+.band .lab{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-family:var(--f-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.band .val{font-weight:800;font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.band .tgt{font-size:12px;font-family:var(--f-mono)}
+.band .tgt.ok{color:var(--good)} .band .tgt.gap{color:var(--warn)}
+.trf-foot{padding:6px 10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
+.l-short{display:none}
+@media (max-width:420px){.band{padding:6px 7px 8px}.band .val{font-size:24px}.band .lab{font-size:10px}.l-long{display:none}.l-short{display:inline}}
+
+.stack{display:grid;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-width:0}
+.card h2{font-size:16px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .aside{margin-left:auto;font-size:12px;font-weight:400;color:var(--muted)}
+.card h2 .btn{margin-left:auto}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:600px){.split{grid-template-columns:1fr}}
+.big{font-weight:800;font-size:34px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.big small{font-size:15px;font-weight:600;color:var(--muted);letter-spacing:0}
+.eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:var(--f-mono)}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;cursor:pointer;line-height:1.2;text-decoration:none;color:var(--ink);display:inline-block}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.quick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.quick .btn{padding:8px 4px;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.quick .btn b{font-family:var(--f-mono);font-weight:500;font-size:12px}
+.dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex:none}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--surface-2);margin:10px 0}
+.bar span{height:100%}
+.heat{max-width:300px;display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;margin-top:6px}
+.heat i{aspect-ratio:1;border-radius:3px;background:var(--surface-2);max-width:100%;position:relative}
+.heat i.fill::after{content:"";position:absolute;inset:0;border-radius:3px;background:var(--accent);opacity:var(--o)}
+.heat i.today{outline:1.5px solid var(--pencil)}
+.heat i.future{background:transparent}
+
+.todo{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.todo:first-child{border-top:0}
+.todo input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--accent)}
+.todo label{flex:1;min-width:0;overflow-wrap:anywhere;cursor:pointer}
+.todo.done label{color:var(--muted);text-decoration:line-through}
+
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.pill.warn{border-color:var(--warn);color:var(--warn)} .pill.good{border-color:var(--good);color:var(--good)}
+.pill.pencil{background:var(--pencil-soft);border-color:var(--pencil)}
+.list{display:grid}
+.item{display:grid;gap:4px;padding:12px 0;border-top:1px solid var(--line);min-width:0}
+.item:first-child{border-top:0;padding-top:4px}
+.item .line1{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.item .title{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.item .meta{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.item .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.chips{display:flex;gap:6px 10px;flex-wrap:wrap}
+.chip{font-family:var(--f-mono);font-size:12px;display:inline-flex;align-items:center;gap:5px;color:var(--muted)}
+.pre{white-space:pre-wrap;overflow-wrap:anywhere}
+details summary{cursor:pointer;color:var(--accent);font-size:13px}
+details .body{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow-x:auto;max-width:100%}
+.seg button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font-size:13px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.empty{padding:14px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:14px}
+.search{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.tabs .in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.tabs button{border:0;background:transparent;padding:6px 2px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--muted);position:relative}
+.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7}
+.tabs button[aria-current="page"]{color:var(--accent);font-weight:600}
+.tabs .badge{position:absolute;top:2px;right:calc(50% - 22px);background:var(--pencil);color:#1b1b1b;font-size:10px;border-radius:999px;padding:0 5px;font-family:var(--f-mono)}
+
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(10,20,25,.45);display:flex;align-items:flex-end;justify-content:center}
+.panel{background:var(--surface);width:100%;max-width:560px;max-height:90%;overflow:auto;border-radius:14px 14px 0 0;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+@media (min-width:700px){.sheet{align-items:center}.panel{border-radius:14px}}
+.panel h3{font-size:18px;margin-bottom:12px}
+.panel h4{font-size:14px;margin:14px 0 6px}
+.form{display:grid;gap:10px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+.field label{font-size:12.5px;color:var(--muted)}
+.field input,.field select,.field textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 10px;width:100%;min-width:0;font-size:16px}
+.field textarea{min-height:90px;resize:vertical}
+.field .hint{font-size:12px;color:var(--accent);font-family:var(--f-mono)}
+.formacts{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.formacts .sp{flex:1}
+.menu{display:grid;gap:8px}
+.menu .btn{text-align:left;padding:12px 14px}
+.menu .btn small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.steps{margin:6px 0 0;padding-left:20px;font-size:14px}
+.steps li{margin:4px 0}
+code{font-family:var(--f-mono);font-size:.92em;background:var(--surface-2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+
+.timer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--surface-2)}
+.timer .clock{font-family:var(--f-mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.timer .grow{flex:1}
+.nudge{border-color:var(--pencil);background:var(--pencil-soft)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;max-width:90%;text-align:center}
+@media (prefers-reduced-motion:no-preference){.panel{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="grow">
+      <h1>雅思冲刺簿</h1>
+      <div class="sub">目标 7.5 · TU/e 2028 秋季入学 · <button class="sync" id="sync" data-act="sync-menu"><i></i><span>仅本机</span></button></div>
+    </div>
+    <button class="icon-btn" data-act="menu" aria-label="设置"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  </header>
+
+  <section class="trf" id="trf" aria-label="当前分数与目标"></section>
+
+  <main>
+    <div class="view" id="v-today"></div>
+    <div class="view" id="v-log" hidden></div>
+    <div class="view" id="v-score" hidden></div>
+    <div class="view" id="v-review" hidden></div>
+    <div class="view" id="v-mat" hidden></div>
+  </main>
+</div>
+
+<nav class="tabs" aria-label="页面">
+  <div class="in">
+    <button data-tab="today" aria-current="page"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>今天</button>
+    <button data-tab="log"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>打卡</button>
+    <button data-tab="score"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/></svg>成绩</button>
+    <button data-tab="review"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="14" height="14" rx="2"/><path d="M8 3h12v14"/></svg>复习<span class="badge" id="due-badge" hidden></span></button>
+    <button data-tab="mat"><svg viewBox="0 0 24 24"><path d="M4 4h6l2 2h8v14H4z"/></svg>资料</button>
+  </div>
+</nav>
+
+<div class="sheet" id="sheet" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="seed.js"></script>
+<script>
+"use strict";
+/* ================= constants ================= */
+const APP_VERSION='1.1.0';
+const SECS=[{k:'L',name:'听力',en:'Listening'},{k:'R',name:'阅读',en:'Reading'},{k:'W',name:'写作',en:'Writing'},{k:'S',name:'口语',en:'Speaking'}];
+const LOGK=[...SECS,{k:'V',name:'词汇',en:'Vocab'}];
+const SECNAME={L:'听力',R:'阅读',W:'写作',S:'口语',V:'词汇',G:'综合'};
+const KINDNAME={link:'链接',note:'笔记',book:'书'};
+const INTERVALS=[1,3,7,14,30,60];
+const L_TABLE=[[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[8,3.5],[6,3],[4,2.5],[0,0]];
+const R_TABLE=[[39,9],[37,8.5],[35,8],[33,7.5],[30,7],[27,6.5],[23,6],[19,5.5],[15,5],[13,4.5],[10,4],[8,3.5],[6,3],[4,2.5],[0,0]];
+const PHASES=window.SEED_PHASES||[];
+const DEFAULT_CONFIG={target:{overall:7.5,L:8,R:8,W:6.5,S:7},baseline:{L:6,R:6,W:6,S:6,note:'2026 年 10 月自估，做完第一套模考后由最新成绩替换'},exams:[{label:'一战',date:''},{label:'二战',date:''}]};
+const KEY='ielts-sprint-v1', SKEY='ielts-sprint-sync', GIST_FILE='ielts-sprint.json';
+const COLS=['logs','mocks','essays','cards','mats','todos','meta'];
+
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nl2br=s=>esc(s).replace(/\n/g,'<br>');
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>ymd(new Date());
+const parseYmd=s=>{const[y,m,d]=String(s).split('-').map(Number);return new Date(y,(m||1)-1,d||1)};
+const addDays=(s,n)=>{const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d)};
+const daysBetween=(a,b)=>Math.round((parseYmd(b)-parseYmd(a))/86400000);
+const md=s=>s?s.slice(5).replace('-','/'):'';
+const hhmm=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const fmtB=b=>(b==null||b===''||isNaN(b))?'–':Number(b).toFixed(1);
+const newId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const safeUrl=u=>/^https?:\/\//i.test(u||'')?u:'';
+const host=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return''}};
+const words=t=>(t||'').trim().split(/\s+/).filter(Boolean).length;
+function rawToBand(raw,t){if(raw==null||raw===''||isNaN(raw))return null;raw=+raw;for(const[min,b]of t)if(raw>=min)return b;return 0}
+function overallOf(arr){if(arr.some(x=>x==null||x===''||isNaN(x)))return null;const a=arr.reduce((s,x)=>s+Number(x),0)/4;const f=a-Math.floor(a);return Math.floor(a)+(f<0.25-1e-9?0:f<0.75-1e-9?0.5:1)}
+function cefr(b){if(b==null)return'–';if(b>=8.5)return'C2';if(b>=7)return'C1';if(b>=5.5)return'B2';if(b>=4)return'B1';return'A2'}
+function toast(msg,ms){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,ms||2400)}
+async function copyText(text){try{await navigator.clipboard.writeText(text);return true}catch(e){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}ta.remove();return ok}}
+function download(name,text,type){const blob=new Blob([text],{type:type||'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+
+/* ================= local store =================
+   DB = {app, v, seedV, cols:{name:{id:{...fields, u:<ms>, del?:true}}}}
+   每条记录带修改时间 u，同步时逐条取较新的一份；删除留一个 del 标记，让其他设备也删掉。 */
+function emptyDB(){const o={app:'ielts-sprint',v:1,seedV:0,cols:{}};COLS.forEach(c=>o.cols[c]={});return o}
+function loadDB(){try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o&&o.cols){COLS.forEach(c=>o.cols[c]=o.cols[c]||{});return o}}catch(e){}return emptyDB()}
+let DB=loadDB();
+let saveWarned=false;
+function saveDB(){try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){if(!saveWarned){saveWarned=true;toast('本机存储失败：可能是无痕模式或空间不足',4000)}}}
+const col=c=>DB.cols[c]||(DB.cols[c]={});
+const list=c=>Object.entries(col(c)).filter(([,r])=>r&&!r.del).map(([id,r])=>({id,...r}));
+const getRec=(c,id)=>{const r=col(c)[id];return r&&!r.del?{id,...r}:null};
+function put(c,id,data){const d={...data};delete d.id;col(c)[id]={...d,u:Date.now()};saveDB();render();scheduleSync()}
+function remove(c,id){col(c)[id]={del:true,u:Date.now()};saveDB();render();scheduleSync()}
+function merge(a,b){const out={app:'ielts-sprint',v:1,seedV:Math.max(a.seedV||0,b.seedV||0),cols:{}};
+  const names=new Set([...COLS,...Object.keys(a.cols||{}),...Object.keys(b.cols||{})]);
+  for(const n of names){const x=(a.cols||{})[n]||{},y=(b.cols||{})[n]||{};const o={};
+    for(const id of new Set([...Object.keys(x),...Object.keys(y)])){const rx=x[id],ry=y[id];o[id]=!rx?ry:!ry?rx:((ry.u||0)>(rx.u||0)?ry:rx)}out.cols[n]=o}
+  return out}
+function applySeeds(){const v=window.SEED_VERSION||0;if((DB.seedV||0)>=v)return;const t=today();
+  (window.SEED_MATS||[]).forEach(m=>{if(!col('mats')[m.id]){const {id,...rest}=m;col('mats')[id]={...rest,createdAt:'2026-10-18',u:1}}});
+  (window.SEED_CARDS||[]).forEach(([id,kind,sec,front,back],i)=>{if(!col('cards')[id])col('cards')[id]={kind,sec,front,back,source:'Claude 整理',stage:0,next:addDays(t,Math.floor(i/4)),status:'learning',lapses:0,createdAt:t,u:1}});
+  (window.SEED_TODOS||[]).forEach(([id,phase,text],i)=>{if(!col('todos')[id])col('todos')[id]={phase,text,done:false,order:i,u:1}});
+  DB.seedV=v;saveDB()}
+
+/* ================= GitHub Gist sync ================= */
+function loadSync(){try{return JSON.parse(localStorage.getItem(SKEY)||'{}')}catch(e){return{}}}
+let SYNC=loadSync();
+function saveSync(){try{localStorage.setItem(SKEY,JSON.stringify(SYNC))}catch(e){}}
+let syncTimer=null,syncing=false,syncAgain=false,syncState={kind:'none',text:'仅本机'};
+function setSync(kind,text){syncState={kind,text};const b=$('#sync');b.classList.toggle('on',kind==='ok');b.classList.toggle('err',kind==='err');b.lastElementChild.textContent=text}
+function initSyncLabel(){if(!SYNC.token)setSync('none','仅本机');else if(SYNC.last)setSync('ok','上次同步 '+hhmm(SYNC.last));else setSync('none','未同步')}
+function scheduleSync(){if(!SYNC.token)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncNow(false),2500)}
+async function gh(path,opts={}){const r=await fetch('https://api.github.com'+path,{...opts,cache:'no-store',headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+SYNC.token,'X-GitHub-Api-Version':'2022-11-28',...(opts.body?{'Content-Type':'application/json'}:{})}});
+  if(!r.ok){const e=new Error('gh '+r.status);e.status=r.status;throw e}return r.status===204?null:r.json()}
+async function findGist(){for(let p=1;p<=5;p++){const arr=await gh('/gists?per_page=100&page='+p);if(!arr.length)return'';const g=arr.find(x=>x.files&&x.files[GIST_FILE]);if(g)return g.id;if(arr.length<100)return''}return''}
+async function syncNow(manual){
+  if(!SYNC.token){if(manual)openSyncSetup();return}
+  if(!navigator.onLine){setSync('none','离线，联网后自动同步');if(manual)toast('现在没网，数据已存在本机');return}
+  if(syncing){syncAgain=true;return}
+  syncing=true;setSync('none','同步中…');
+  try{
+    if(!SYNC.gistId){SYNC.gistId=await findGist();saveSync()}
+    let remote=null,remoteText='';
+    if(SYNC.gistId){const g=await gh('/gists/'+SYNC.gistId);const f=g.files&&g.files[GIST_FILE];
+      if(f){remoteText=f.truncated?await (await fetch(f.raw_url,{cache:'no-store'})).text():f.content;try{remote=JSON.parse(remoteText)}catch(e){remote=null}}}
+    if(remote&&remote.cols){DB=merge(DB,remote);saveDB();render()}
+    const text=JSON.stringify(DB);
+    if(!SYNC.gistId){const g=await gh('/gists',{method:'POST',body:JSON.stringify({description:'雅思冲刺簿 数据（自动同步，请勿手动修改）',public:false,files:{[GIST_FILE]:{content:text}}})});SYNC.gistId=g.id}
+    else if(text!==remoteText){await gh('/gists/'+SYNC.gistId,{method:'PATCH',body:JSON.stringify({files:{[GIST_FILE]:{content:text}}})})}
+    SYNC.last=Date.now();saveSync();setSync('ok','已同步 '+hhmm(SYNC.last));if(manual)toast('同步完成')
+  }catch(e){
+    const s=e&&e.status;const msg=s===401?'令牌无效或已过期':s===403?'令牌没有 gist 权限，或请求太频繁':s===404?'找不到同步数据，检查令牌的 gist 权限':'同步失败，稍后会自动重试';
+    if(s===404){SYNC.gistId='';saveSync()}
+    setSync('err',msg);if(manual)toast(msg,3500)
+  }finally{syncing=false;if(syncAgain){syncAgain=false;scheduleSync()}}
+}
+window.addEventListener('online',()=>syncNow(false));
+let lastVis=0;document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastVis>30000){lastVis=Date.now();syncNow(false)}});
+
+/* ================= derived ================= */
+const S={tab:'today',cardFilter:'due',matFilter:'all',matQuery:''};
+/* 计时器只存在本机（跨设备同步的是计时结束后记下的分钟数） */
+const TKEY='ielts-sprint-timer',HKEY='ielts-sprint-hide-install';
+const getTimer=()=>{try{return JSON.parse(localStorage.getItem(TKEY)||'null')}catch(e){return null}};
+const setTimer=v=>{try{v?localStorage.setItem(TKEY,JSON.stringify(v)):localStorage.removeItem(TKEY)}catch(e){}};
+const fmtClock=ms=>{const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return(h?h+':'+String(m).padStart(2,'0'):String(m))+':'+String(x).padStart(2,'0')};
+const isStandalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+let installEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(S.tab==='today')render()});
+window.addEventListener('appinstalled',()=>{installEvt=null;toast('已安装到主屏幕')});
+function lastLogDate(){const ds=list('logs').filter(l=>logTotal(l)>0).map(l=>l.id).sort();return ds[ds.length-1]||''}
+const cfg=()=>{const c=getRec('meta','config')||{};return{target:{...DEFAULT_CONFIG.target,...(c.target||{})},baseline:{...DEFAULT_CONFIG.baseline,...(c.baseline||{})},exams:(c.exams&&c.exams.length?c.exams:DEFAULT_CONFIG.exams),remind:c.remind||'20:00'}};
+const logById=d=>getRec('logs',d);
+const logTotal=l=>l&&l.min?LOGK.reduce((s,k)=>s+(+l.min[k.k]||0),0):0;
+function currentPhase(){const t=today();if(!PHASES.length)return null;for(const p of PHASES)if(p.start<=t&&t<=p.end)return p;if(t<PHASES[0].start)return PHASES[0];return PHASES[PHASES.length-1]}
+const dailyTarget=()=>{const p=currentPhase();return p&&p.daily?p.daily:90};
+function latestMock(){const m=list('mocks').filter(x=>x.overall!=null).sort((a,b)=>(a.date||'').localeCompare(b.date||''));return m[m.length-1]||null}
+function dueCards(){const t=today();return list('cards').filter(c=>c.status!=='mastered'&&(c.next||'')<=t)}
+function streak(){let d=today();if(!logTotal(logById(d)))d=addDays(d,-1);let n=0;while(logTotal(logById(d))>0&&n<2000){n++;d=addDays(d,-1)}return n}
+
+/* ================= render: TRF ================= */
+function renderTRF(){
+  const c=cfg(),m=latestMock();
+  const cur=m?{L:m.L,R:m.R,W:m.W,S:m.S,overall:m.overall}:{...c.baseline,overall:overallOf(SECS.map(s=>c.baseline[s.k]))};
+  const box=(lab,v,t,short)=>{const ok=v!=null&&t!=null&&v>=t;return`<div class="band"><div class="lab"><span class="l-long">${lab}</span><span class="l-short">${short||lab}</span></div><div class="val">${fmtB(v)}</div><div class="tgt ${ok?'ok':'gap'}">→ ${fmtB(t)}${ok?' ✓':''}</div></div>`};
+  $('#trf').innerHTML=`<div class="trf-head"><span>Test Report Form · Academic</span><span>${m?'最新模考':'起点估计'}</span></div>
+  <div class="trf-row">${SECS.map(s=>box(s.en,cur[s.k],c.target[s.k],s.name)).join('')}${box('Overall',cur.overall,c.target.overall,'总分')}</div>
+  <div class="trf-foot"><span>${m?esc((m.source||'模考')+' · '+(m.date||'')):esc(c.baseline.note||'')}</span><span>CEFR ${cefr(cur.overall)} → ${cefr(c.target.overall)}</span><span>TU/e 门槛 6.5 / 单项 6.0</span></div>`;
+}
+
+/* ================= timer ================= */
+function timerHtml(){const T=getTimer();
+  if(T)return`<div class="timer" role="timer"><i class="dot" style="background:var(--c${T.k})"></i><span>${SECNAME[T.k]} 计时中</span><span class="clock" id="timer-clock">${fmtClock(Date.now()-T.start)}</span><span class="grow"></span><button class="btn sm primary" data-act="timer-stop">结束并记录</button><button class="btn sm" data-act="timer-cancel">放弃</button></div>`;
+  return`<div class="row" style="margin-top:10px;gap:6px"><span class="muted small">计时学习：</span>${LOGK.map(k=>`<button class="btn sm" data-act="timer-start" data-k="${k.k}">${k.name}</button>`).join('')}</div>`}
+function timerStop(){const T=getTimer();if(!T)return;let mins=Math.round((Date.now()-T.start)/60000);setTimer(null);
+  if(mins<1){render();toast('不到 1 分钟，没有记录');return}
+  if(mins>240){mins=240;toast('超过 4 小时，按 240 分钟记录；不对的话在「详细记录」里改',4000)}
+  const d=today(),cur=logById(d)||{min:{},note:''};put('logs',d,{date:d,min:{...(cur.min||{}),[T.k]:(+(cur.min||{})[T.k]||0)+mins},note:cur.note||''});if(mins<=240)toast(`${SECNAME[T.k]} 记了 ${mins} 分钟`)}
+setInterval(()=>{const T=getTimer(),el=document.getElementById('timer-clock');if(T&&el)el.textContent=fmtClock(Date.now()-T.start)},1000);
+function installHelp(){
+  if(installEvt){installEvt.prompt();installEvt.userChoice.finally(()=>{installEvt=null;render()});return}
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  openPanel('装到主屏幕',ios?`<ol class="steps"><li>用 <b>Safari</b> 打开这个网址（其他浏览器不行）</li><li>点地址栏旁边的分享按钮</li><li>选「添加到主屏幕」，点「添加」</li></ol>`
+    :`<ol class="steps"><li>用 <b>Chrome</b> 打开这个网址</li><li>点右上角 ⋮</li><li>选「安装应用」或「添加到主屏幕」</li></ol><p class="muted small">如果菜单里没有，刷新一次页面再看。</p>`,()=>{});
+}
+
+/* ================= render: Today ================= */
+function renderToday(){
+  const c=cfg(),t=today(),p=currentPhase(),tl=logById(t),tot=logTotal(tl),tgt=dailyTarget();
+  const next=c.exams.filter(e=>e.date&&e.date>=t).sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const examHtml=next?`<div class="eyebrow">距离${esc(next.label)}</div><div class="big">${daysBetween(t,next.date)}<small> 天</small></div><div class="muted small">${esc(next.date)}</div>`
+    :`<div class="eyebrow">考试日期</div><div class="big" style="font-size:22px">还没报考位</div><div class="muted small">报好后填上日期，这里会倒计时。</div><button class="btn sm" data-act="goals" style="margin-top:8px">填写日期</button>`;
+  const phaseHtml=p?`<div class="eyebrow">当前阶段 · ${md(p.start)}–${md(p.end)}</div><div style="font-weight:700;font-size:17px">${esc(p.name)}</div><div class="small">${esc(p.focus||'')}</div><div class="muted small" style="margin-top:4px">每日目标 ${p.daily} 分钟</div>`:'';
+  const segs=LOGK.map(k=>{const v=+((tl&&tl.min&&tl.min[k.k])||0);return v?`<span style="width:${(v/Math.max(tgt,tot)*100).toFixed(1)}%;background:var(--c${k.k})" title="${k.name} ${v} 分钟"></span>`:''}).join('');
+  const quick=LOGK.map(k=>`<button class="btn" data-act="quick" data-k="${k.k}"><span class="row" style="gap:5px"><i class="dot" style="background:var(--c${k.k})"></i>${k.name}</span><b>+15</b></button>`).join('');
+  const dow=(parseYmd(t).getDay()+6)%7,start=addDays(t,-dow-49);
+  let cells='';for(let i=0;i<56;i++){const d=addDays(start,i);if(d>t){cells+='<i class="future"></i>';continue}const v=logTotal(logById(d));const o=v?Math.max(.18,Math.min(1,v/tgt)):0;cells+=`<i class="${v?'fill':''} ${d===t?'today':''}" style="--o:${o.toFixed(2)}" title="${d}：${v} 分钟"></i>`}
+  const due=dueCards().length;
+  const todos=list('todos').filter(x=>!p||x.phase===p.name||!x.phase).sort((a,b)=>(a.done-b.done)||((a.order??999)-(b.order??999)));
+  const todoHtml=todos.map(x=>`<div class="todo ${x.done?'done':''}"><input type="checkbox" id="td-${esc(x.id)}" data-act="todo" data-id="${esc(x.id)}" ${x.done?'checked':''}><label for="td-${esc(x.id)}">${esc(x.text)}</label><button class="btn sm" data-act="todo-edit" data-id="${esc(x.id)}" aria-label="编辑">编辑</button></div>`).join('');
+  const last=lastLogDate(),gap=last?daysBetween(last,t):0;
+  const nudge=gap>=2?`<div class="card nudge"><b>已经 ${gap} 天没打卡了。</b> 今天先做 15 分钟就行：听一段 Section 3，或者复习到期的卡片。</div>`:'';
+  let hide=false;try{hide=localStorage.getItem(HKEY)==='1'}catch(e){}
+  const install=!isStandalone()&&!hide?`<div class="card"><h2>装到主屏幕 <button class="btn sm" data-act="install-hide">不再提示</button></h2><div class="small">装好后像 App 一样从主屏幕打开，断网也能用。</div><div class="row" style="margin-top:8px"><button class="btn sm primary" data-act="install">${installEvt?'安装':'怎么安装'}</button></div></div>`:'';
+  $('#v-today').innerHTML=`<div class="stack">${nudge}
+   <div class="split"><div class="card">${examHtml}</div><div class="card">${phaseHtml}</div></div>
+   <div class="card"><h2>今天学了 <span class="aside">${t}</span></h2>
+     <div class="big">${tot}<small> / ${tgt} 分钟</small></div>
+     <div class="bar" role="img" aria-label="今日各项用时">${segs}</div>
+     <div class="quick">${quick}</div>
+     ${timerHtml()}
+     <div class="row" style="margin-top:10px"><button class="btn sm" data-act="log" data-date="${t}">详细记录 / 写备注</button>${tot?`<span class="muted small">${LOGK.filter(k=>tl.min[k.k]).map(k=>k.name+' '+tl.min[k.k]).join(' · ')}</span>`:''}</div>
+   </div>
+   <div class="card"><h2>本阶段任务 <button class="btn sm" data-act="todo-new">加一条</button></h2>${todoHtml||'<div class="empty">这个阶段的任务都清空了。</div>'}</div>
+   <div class="split">
+     <div class="card"><h2>连续打卡 <span class="aside">近 8 周</span></h2><div class="big">${streak()}<small> 天</small></div><div class="heat" aria-label="近 8 周每日学习热力图">${cells}</div></div>
+     <div class="card"><h2>到期复习</h2><div class="big">${due}<small> 张卡</small></div><p class="muted small" style="margin:6px 0 10px">错题、表达和方法卡按 1、3、7、14、30、60 天的间隔复习。</p><button class="btn sm ${due?'primary':''}" data-act="goto" data-tab="review">${due?'开始复习':'去加卡片'}</button></div>
+   </div>${install}
+  </div>`;
+}
+
+/* ================= render: Log ================= */
+function weekBars(){
+  const t=today(),dow=(parseYmd(t).getDay()+6)%7,mon=addDays(t,-dow);
+  const weeks=[];for(let w=7;w>=0;w--){const s=addDays(mon,-7*w);const sum={};LOGK.forEach(k=>sum[k.k]=0);for(let i=0;i<7;i++){const l=logById(addDays(s,i));if(l&&l.min)LOGK.forEach(k=>sum[k.k]+=(+l.min[k.k]||0))}weeks.push({s,sum,tot:LOGK.reduce((a,k)=>a+sum[k.k],0)})}
+  const wk=dailyTarget()*7,W=600,H=200,pl=8,pr=8,pt=22,pb=24,max=Math.max(60,wk,...weeks.map(w=>w.tot)),bw=(W-pl-pr)/8;
+  let g='';weeks.forEach((w,i)=>{let y=H-pb;const x=pl+i*bw+bw*.18,ww=bw*.64;LOGK.forEach(k=>{const h=w.sum[k.k]/max*(H-pt-pb);if(h>0){y-=h;g+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${ww.toFixed(1)}" height="${h.toFixed(1)}" fill="var(--c${k.k})"/>`}});
+    g+=`<text x="${(x+ww/2).toFixed(1)}" y="${H-8}" text-anchor="middle">${md(w.s)}</text>`;if(w.tot)g+=`<text x="${(x+ww/2).toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle" style="fill:var(--ink)">${(w.tot/60).toFixed(1)}h</text>`});
+  const wy=(H-pb-wk/max*(H-pt-pb)).toFixed(1);
+  g+=`<line x1="${pl}" x2="${W-pr}" y1="${wy}" y2="${wy}" stroke="var(--pencil)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${pl+2}" y="${(wy-5)}" style="fill:var(--ink)">本阶段每周目标 ${(wk/60).toFixed(1)}h</text>`;
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="近 8 周每周学习时长"><line x1="${pl}" x2="${W-pr}" y1="${H-pb}" y2="${H-pb}" stroke="var(--line)"/>${g}</svg><div class="legend">${LOGK.map(k=>`<span><i class="dot" style="background:var(--c${k.k})"></i>${k.name}</span>`).join('')}</div>`;
+}
+function renderLog(){
+  const logs=list('logs').filter(l=>logTotal(l)>0||l.note).sort((a,b)=>b.id.localeCompare(a.id)).slice(0,60);
+  const items=logs.map(l=>`<div class="item"><div class="line1"><span class="title mono">${esc(l.id)}</span><span class="pill">${logTotal(l)} 分钟</span><button class="btn sm" data-act="log" data-date="${esc(l.id)}" style="margin-left:auto">编辑</button></div>
+    <div class="chips">${LOGK.filter(k=>l.min&&+l.min[k.k]).map(k=>`<span class="chip"><i class="dot" style="background:var(--c${k.k})"></i>${k.name} ${l.min[k.k]}</span>`).join('')}</div>${l.note?`<div class="small pre">${esc(l.note)}</div>`:''}</div>`).join('');
+  $('#v-log').innerHTML=`<div class="stack"><div class="card"><h2>每周时长 <span class="aside">周一起算</span></h2>${weekBars()}</div>
+   <div class="card"><h2>打卡记录 <button class="btn sm primary" data-act="log" data-date="${today()}">记一笔</button></h2>
+   ${items?`<div class="list">${items}</div>`:'<div class="empty">还没有记录。在「今天」页点 +15，或者点「记一笔」补录某一天。</div>'}</div></div>`;
+}
+
+/* ================= render: Scores ================= */
+function trendChart(){
+  const m=list('mocks').filter(x=>x.date).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!m.length)return'<div class="empty">还没有模考成绩。限时做完一套剑桥真题后点「添加模考」，听力和阅读填正确题数，会自动换算成分数。</div>';
+  const c=cfg(),W=600,H=240,pl=34,pr=60,pt=14,pb=26,lo=4,hi=9;
+  const X=i=>m.length===1?(pl+(W-pl-pr)/2):pl+i*(W-pl-pr)/(m.length-1);const Y=b=>pt+(hi-b)/(hi-lo)*(H-pt-pb);
+  let g='';for(let b=lo;b<=hi;b++)g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(b)}" y2="${Y(b)}" stroke="var(--line)" stroke-width="${b===lo?1:.6}"/><text x="${pl-8}" y="${Y(b)+4}" text-anchor="end">${b}</text>`;
+  g+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(c.target.overall)}" y2="${Y(c.target.overall)}" stroke="var(--pencil)" stroke-width="2" stroke-dasharray="6 5"/><text x="${pl+4}" y="${Y(c.target.overall)-6}" style="fill:var(--ink)">目标 ${fmtB(c.target.overall)}</text>`;
+  const line=(key,color,w)=>{const pts=m.map((x,i)=>x[key]!=null&&x[key]!==''?[X(i),Y(+x[key])]:null).filter(Boolean);if(!pts.length)return'';return(pts.length>1?`<polyline points="${pts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linejoin="round"/>`:'')+pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${w>2?4:2.5}" fill="${color}"/>`).join('')};
+  SECS.forEach(s=>g+=line(s.k,`var(--c${s.k})`,1.6));g+=line('overall','var(--ink)',3);
+  const last=m[m.length-1];if(last.overall!=null)g+=`<text x="${(X(m.length-1)+8).toFixed(1)}" y="${(Y(last.overall)-8).toFixed(1)}" style="fill:var(--ink)">${fmtB(last.overall)}</text>`;
+  m.forEach((x,i)=>{if(m.length<=8||i===0||i===m.length-1)g+=`<text x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="middle">${md(x.date)}</text>`});
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="模考分数走势">${g}</svg><div class="legend"><span><i class="dot" style="background:var(--ink)"></i>总分</span>${SECS.map(s=>`<span><i class="dot" style="background:var(--c${s.k})"></i>${s.name}</span>`).join('')}</div>`;
+}
+function renderScore(){
+  const mocks=list('mocks').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const mItems=mocks.map(x=>`<div class="item"><div class="line1"><span class="title">${esc(x.source||'模考')}</span><span class="muted small mono">${esc(x.date||'')}</span><span class="pill pencil mono" style="margin-left:auto">总 ${fmtB(x.overall)}</span></div>
+    <div class="chips">${SECS.map(s=>`<span class="chip"><i class="dot" style="background:var(--c${s.k})"></i>${s.name} ${fmtB(x[s.k])}${s.k==='L'&&x.Lraw!=null?` (${x.Lraw}/40)`:''}${s.k==='R'&&x.Rraw!=null?` (${x.Rraw}/40)`:''}</span>`).join('')}</div>
+    ${x.note?`<div class="small pre">${esc(x.note)}</div>`:''}<div class="acts"><button class="btn sm" data-act="mock" data-id="${esc(x.id)}">编辑</button></div></div>`).join('');
+  const essays=list('essays').sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const eItems=essays.map(e=>{const graded=e.band!=null&&e.band!=='';
+    return`<div class="item"><div class="line1"><span class="pill">${esc(e.task||'Task 2')}</span><span class="title">${esc((e.prompt||'（未填题目）').slice(0,70))}${(e.prompt||'').length>70?'…':''}</span></div>
+    <div class="line1"><span class="muted small mono">${esc(e.date||'')} · ${words(e.text)} 词</span>${graded?`<span class="pill good mono">${fmtB(e.band)}</span>`:'<span class="pill warn">待批改</span>'}
+    ${['TR','CC','LR','GRA'].filter(k=>e[k]!=null&&e[k]!=='').map(k=>`<span class="chip">${k} ${fmtB(e[k])}</span>`).join('')}</div>
+    ${e.feedback?`<details><summary>看批改意见</summary><div class="body">${esc(e.feedback)}</div></details>`:''}
+    ${e.text?`<details><summary>看原文</summary><div class="body">${esc(e.text)}</div></details>`:''}
+    <div class="acts"><button class="btn sm" data-act="essay" data-id="${esc(e.id)}">编辑 / 填分数</button><button class="btn sm" data-act="essay-copy" data-id="${esc(e.id)}">复制去批改</button></div></div>`}).join('');
+  const pend=essays.filter(e=>e.band==null||e.band==='').length;
+  $('#v-score').innerHTML=`<div class="stack">
+   <div class="card"><h2>分数走势 <span class="aside">黄色虚线是目标</span></h2>${trendChart()}</div>
+   <div class="card"><h2>模考记录 <button class="btn sm primary" data-act="mock">添加模考</button></h2>${mItems?`<div class="list">${mItems}</div>`:'<div class="empty">第一套建议在 11 月中前做完，当作诊断。</div>'}</div>
+   <div class="card"><h2>写作批改 ${pend?`<span class="pill warn">${pend} 篇待批改</span>`:''}<button class="btn sm primary" data-act="essay">交一篇</button></h2>
+   <p class="muted small" style="margin:0 0 8px">「复制去批改」会把题目、原文和四项评分要求一起复制，粘贴给老师或任何 AI 都行；拿到分数后点「编辑 / 填分数」填回来。</p>
+   ${eItems?`<div class="list">${eItems}</div>`:'<div class="empty">还没有作文。每周写 2 篇 Task 2，粘贴题目和原文就行。</div>'}</div>
+  </div>`;
+}
+
+/* ================= render: Review ================= */
+function renderReview(){
+  const t=today(),due=dueCards(),all=list('cards');
+  const lst=(S.cardFilter==='due'?due:all).sort((a,b)=>(a.next||'9').localeCompare(b.next||'9'));
+  const items=lst.map(c=>{const isDue=c.status!=='mastered'&&(c.next||'')<=t;const st=c.status==='mastered'?'<span class="pill good">已掌握</span>':`<span class="pill ${isDue?'warn':''}">第 ${(c.stage||0)+1} 轮 · ${isDue?'今天':md(c.next)}</span>`;
+    return`<div class="item"><div class="line1"><span class="pill">${esc(c.kind||'错题')} · ${SECNAME[c.sec]||''}</span>${st}</div>
+    <div class="title pre">${esc(c.front)}</div>
+    ${c.back?`<details><summary>${c.kind==='错题'?'看答案和错因':'看内容'}</summary><div class="body">${esc(c.back)}</div></details>`:''}
+    ${c.source?`<div class="meta">来源：${esc(c.source)}</div>`:''}
+    <div class="acts">${isDue?`<button class="btn sm primary" data-act="pass" data-id="${esc(c.id)}">记住了</button><button class="btn sm" data-act="fail" data-id="${esc(c.id)}">没记住</button>`:''}<button class="btn sm" data-act="card" data-id="${esc(c.id)}">编辑</button></div></div>`}).join('');
+  $('#v-review').innerHTML=`<div class="stack"><div class="card"><h2>复习卡 <button class="btn sm primary" data-act="card">加一张</button></h2>
+   <div class="row" style="margin-bottom:6px"><div class="seg" role="group" aria-label="筛选"><button data-act="cf" data-v="due" aria-pressed="${S.cardFilter==='due'}">今天到期 ${due.length}</button><button data-act="cf" data-v="all" aria-pressed="${S.cardFilter==='all'}">全部 ${all.length}</button></div></div>
+   ${items?`<div class="list">${items}</div>`:`<div class="empty">${S.cardFilter==='due'&&all.length?'今天的卡都复习完了。':'三种卡：<b>错题</b>（写清错因）、<b>表达</b>（写作口语想用的句子和同义替换）、<b>方法</b>（做题规则）。点「加一张」开始。'}</div>`}</div></div>`;
+}
+
+/* ================= render: Materials ================= */
+function matListHtml(){
+  const f=S.matFilter,q=S.matQuery.trim().toLowerCase();
+  const lst=list('mats').filter(m=>(f==='all'||m.sec===f)&&(!q||(m.title+' '+(m.note||'')).toLowerCase().includes(q))).sort((a,b)=>((a.u===1)-(b.u===1))||(b.u||0)-(a.u||0)||(a.title||'').localeCompare(b.title||''));
+  const items=lst.map(m=>{const href=safeUrl(m.url);
+    return`<div class="item"><div class="line1"><span class="pill">${SECNAME[m.sec]||'综合'}</span><span class="title">${href?`<a href="${esc(href)}" target="_blank" rel="noopener">${esc(m.title)}</a>`:esc(m.title)}</span></div>
+    <div class="meta">${KINDNAME[m.kind]||'链接'}${href?' · '+esc(host(href)):''}</div>${m.note?`<div class="small pre">${esc(m.note)}</div>`:''}
+    <div class="acts"><button class="btn sm" data-act="mat" data-id="${esc(m.id)}">编辑</button></div></div>`}).join('');
+  return items?`<div class="list">${items}</div>`:'<div class="empty">没有符合条件的资料。</div>';
+}
+function renderMat(){
+  const f=S.matFilter;
+  const fs=[['all','全部'],['L','听力'],['R','阅读'],['W','写作'],['S','口语'],['V','词汇'],['G','综合']];
+  const cnt=k=>k==='all'?list('mats').length:list('mats').filter(m=>m.sec===k).length;
+  $('#v-mat').innerHTML=`<div class="stack"><div class="card"><h2>资料库 <button class="btn sm primary" data-act="mat">收录</button></h2>
+   <input class="search" id="mat-q" type="search" placeholder="搜索标题或说明" value="${esc(S.matQuery)}" aria-label="搜索资料">
+   <div class="row" style="margin-bottom:6px"><div class="seg" role="group" aria-label="按科目筛选">${fs.map(([v,n])=>`<button data-act="mf" data-v="${v}" aria-pressed="${f===v}">${n} ${cnt(v)}</button>`).join('')}</div></div>
+   <p class="muted small" style="margin:0 0 6px">PDF、音频这类大文件建议放在网盘里，这里存链接。</p>
+   <div id="mat-list">${matListHtml()}</div></div></div>`;
+  $('#mat-q').addEventListener('input',e=>{S.matQuery=e.target.value;if(e.isComposing)return;$('#mat-list').innerHTML=matListHtml()});
+  $('#mat-q').addEventListener('compositionend',e=>{S.matQuery=e.target.value;$('#mat-list').innerHTML=matListHtml()});
+}
+
+function render(){
+  renderTRF();
+  ({today:renderToday,log:renderLog,score:renderScore,review:renderReview,mat:renderMat})[S.tab]();
+  const d=dueCards().length,b=$('#due-badge');b.hidden=!d;b.textContent=d;
+}
+function setTab(t){S.tab=t;document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='v-'+t);document.querySelectorAll('.tabs button').forEach(b=>b.dataset.tab===t?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));try{history.replaceState(null,'','#'+t)}catch(e){}render();window.scrollTo(0,0)}
+
+/* ================= sheet ================= */
+function closeSheet(){const sh=$('#sheet');sh.hidden=true;sh.innerHTML=''}
+function openPanel(title,html,after){const sh=$('#sheet');sh.innerHTML=`<div class="panel" role="dialog" aria-modal="true" aria-label="${esc(title)}"><h3>${esc(title)}</h3>${html}</div>`;sh.hidden=false;sh.onclick=e=>{if(e.target===sh)closeSheet()};if(after)after(sh)}
+function openSheet({title,fields,submit='保存',onSubmit,onDelete,onInput,note}){
+  const fh=f=>{const id='f-'+f.id;const v=f.value??'';let ctl;
+    if(f.type==='select')ctl=`<select id="${id}">${f.options.map(([ov,on])=>`<option value="${esc(ov)}" ${String(ov)===String(v)?'selected':''}>${esc(on)}</option>`).join('')}</select>`;
+    else if(f.type==='textarea')ctl=`<textarea id="${id}" placeholder="${esc(f.ph||'')}" ${f.rows?`style="min-height:${f.rows*22}px"`:''}>${esc(v)}</textarea>`;
+    else ctl=`<input id="${id}" type="${f.type||'text'}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" ${f.step?`step="${f.step}"`:''} ${f.min!=null?`min="${f.min}"`:''} ${f.max!=null?`max="${f.max}"`:''} ${f.type==='number'?'inputmode="decimal"':''} ${f.readonly?'readonly':''} ${f.type==='password'?'autocomplete="off"':''}>`;
+    return`<div class="field"><label for="${id}">${esc(f.label)}</label>${ctl}${f.hint?`<div class="hint" id="${id}-hint"></div>`:''}</div>`};
+  const groups=fields.map(g=>Array.isArray(g)?`<div class="fgrid">${g.map(fh).join('')}</div>`:fh(g)).join('');
+  openPanel(title,`${note?`<p class="muted small" style="margin:-6px 0 10px">${note}</p>`:''}<form class="form" id="sheet-form">${groups}<div class="formacts">${onDelete?'<button type="button" class="btn danger" id="sheet-del">删除</button>':''}<span class="sp"></span><button type="button" class="btn" id="sheet-cancel">取消</button><button type="submit" class="btn primary">${esc(submit)}</button></div></form>`);
+  const flat=fields.flat();
+  const read=()=>{const o={};flat.forEach(f=>{const el=$('#f-'+f.id);if(!el)return;let v=el.value;if(f.type==='number')v=v===''?null:Number(v);o[f.id]=v});return o};
+  const hint=(id,txt)=>{const h=$('#f-'+id+'-hint');if(h)h.textContent=txt};
+  const set=(id,val)=>{const el=$('#f-'+id);if(el)el.value=val??''};
+  const form=$('#sheet-form');if(onInput){const run=()=>onInput(read(),hint,set);form.addEventListener('input',run);form.addEventListener('change',run);run()}
+  $('#sheet-cancel').onclick=closeSheet;
+  let armed=false;if(onDelete)$('#sheet-del').onclick=e=>{if(!armed){armed=true;e.target.textContent='再点一次确认删除';return}onDelete();closeSheet()};
+  form.onsubmit=async e=>{e.preventDefault();const btn=form.querySelector('[type=submit]');btn.disabled=true;try{const r=await onSubmit(read());if(r!==false)closeSheet()}finally{btn.disabled=false}};
+}
+
+/* ================= forms & actions ================= */
+function quickAdd(k){const d=today();const cur=logById(d)||{min:{},note:''};put('logs',d,{date:d,min:{...(cur.min||{}),[k]:(+(cur.min||{})[k]||0)+15},note:cur.note||''});toast(SECNAME[k]+' +15 分钟')}
+function logForm(date){
+  let shown=date;const l=logById(date)||{min:{}};
+  openSheet({title:'记录学习时长',note:'单位是分钟。改日期会自动载入那天的记录。',fields:[{id:'date',label:'日期',type:'date',value:date},LOGK.map(k=>({id:k.k,label:k.name,type:'number',min:0,step:5,value:(l.min||{})[k.k]??''})),{id:'note',label:'备注（做了什么、卡在哪）',type:'textarea',value:l.note||'',ph:'例：剑 18 T2 听力 S3 精听，地图题又错'}],
+    onInput:(v,hint,set)=>{if(v.date&&v.date!==shown){shown=v.date;const x=logById(v.date)||{min:{}};LOGK.forEach(k=>set(k.k,(x.min||{})[k.k]??''));set('note',x.note||'')}},
+    onSubmit:v=>{if(!v.date){toast('请选择日期');return false}const min={};LOGK.forEach(k=>{if(v[k.k])min[k.k]=Math.max(0,v[k.k])});put('logs',v.date,{date:v.date,min,note:v.note||''});toast('已保存')},
+    onDelete:logById(date)?()=>{remove('logs',shown);toast('已删除')}:null});
+}
+function mockForm(id){
+  const x=id?getRec('mocks',id):null;
+  openSheet({title:x?'编辑模考':'添加模考',note:'听力、阅读填正确题数（满分 40），按学术类换算表折算；写作、口语直接填分数。',fields:[[{id:'date',label:'日期',type:'date',value:x?x.date:today()},{id:'source',label:'来源',value:x?x.source:'',ph:'剑桥 18 Test 2'}],
+    [{id:'Lraw',label:'听力 正确数',type:'number',min:0,max:40,value:x?x.Lraw:'',hint:1},{id:'Rraw',label:'阅读 正确数',type:'number',min:0,max:40,value:x?x.Rraw:'',hint:1}],
+    [{id:'W',label:'写作 分数',type:'number',min:0,max:9,step:.5,value:x?x.W:''},{id:'S',label:'口语 分数',type:'number',min:0,max:9,step:.5,value:x?x.S:''}],
+    {id:'ov',label:'总分（自动计算）',value:'',readonly:true,hint:1},
+    {id:'note',label:'复盘：主要丢分在哪',type:'textarea',value:x?x.note:'',ph:'例：阅读 T/F/NG 错 5 道，P3 时间不够'}],
+    onInput:(v,hint,set)=>{const L=rawToBand(v.Lraw,L_TABLE),R=rawToBand(v.Rraw,R_TABLE);hint('Lraw',L!=null?'= '+fmtB(L):'');hint('Rraw',R!=null?'= '+fmtB(R):'');const o=overallOf([L,R,v.W,v.S]);set('ov',o!=null?fmtB(o):'四项填齐后自动算');hint('ov',o!=null?'四项平均后取最近的 0.5（.25 进到 .5，.75 进到下一整分）':'')},
+    onSubmit:v=>{const L=rawToBand(v.Lraw,L_TABLE),R=rawToBand(v.Rraw,R_TABLE);put('mocks',x?x.id:newId('m'),{date:v.date,source:v.source||'',Lraw:v.Lraw,Rraw:v.Rraw,L,R,W:v.W,S:v.S,overall:overallOf([L,R,v.W,v.S]),note:v.note||''});toast('已保存')},
+    onDelete:x?()=>remove('mocks',x.id):null});
+}
+function essayForm(id){
+  const e=id?getRec('essays',id):null;
+  openSheet({title:e?'编辑作文':'交一篇作文',fields:[[{id:'date',label:'日期',type:'date',value:e?e.date:today()},{id:'task',label:'题型',type:'select',options:[['Task 2','Task 2 大作文'],['Task 1','Task 1 小作文']],value:e?e.task:'Task 2'},{id:'minutes',label:'用时（分钟）',type:'number',value:e?e.minutes:''}],
+    {id:'prompt',label:'题目',type:'textarea',rows:3,value:e?e.prompt:''},{id:'text',label:'作文原文',type:'textarea',rows:10,value:e?e.text:'',hint:1},
+    [{id:'band',label:'总分',type:'number',step:.5,min:0,max:9,value:e?e.band:''},{id:'TR',label:'TR/TA',type:'number',step:.5,value:e?e.TR:''},{id:'CC',label:'CC',type:'number',step:.5,value:e?e.CC:''},{id:'LR',label:'LR',type:'number',step:.5,value:e?e.LR:''},{id:'GRA',label:'GRA',type:'number',step:.5,value:e?e.GRA:''}],
+    {id:'feedback',label:'批改意见',type:'textarea',rows:4,value:e?e.feedback:'',ph:'拿到批改后粘贴在这里'}],
+    onInput:(v,hint)=>{const n=words(v.text);const need=v.task==='Task 1'?150:250;hint('text',n?`${n} 词${n<need?`，低于 ${need} 词会扣分`:''}`:'')},
+    onSubmit:v=>{put('essays',e?e.id:newId('e'),{date:v.date,task:v.task,minutes:v.minutes,prompt:v.prompt||'',text:v.text||'',band:v.band,TR:v.TR,CC:v.CC,LR:v.LR,GRA:v.GRA,feedback:v.feedback||''});toast(e?'已保存':'已保存，记得拿去批改')},
+    onDelete:e?()=>remove('essays',e.id):null});
+}
+async function essayCopy(id){const e=getRec('essays',id);if(!e)return;
+  const t=`请按雅思学术类写作官方评分标准批改下面这篇 ${e.task||'Task 2'}。\n分别给 ${e.task==='Task 1'?'TA':'TR'}、CC、LR、GRA 四项打分（0.5 分一档）和总分，指出每项最影响分数的 1–2 个问题，并给出改写示例。\n\n题目：\n${e.prompt||''}\n\n我的作文（${words(e.text)} 词${e.minutes?`，用时 ${e.minutes} 分钟`:''}）：\n${e.text||''}`;
+  toast(await copyText(t)?'已复制，粘贴给老师或 AI 即可':'复制失败，请手动选择原文复制')}
+function cardForm(id){
+  const c=id?getRec('cards',id):null;
+  openSheet({title:c?'编辑卡片':'加一张复习卡',fields:[[{id:'kind',label:'类型',type:'select',options:[['错题','错题'],['表达','表达'],['方法','方法']],value:c?c.kind:'错题'},{id:'sec',label:'科目',type:'select',options:[...SECS.map(s=>[s.k,s.name]),['V','词汇']],value:c?c.sec:'R'}],
+    {id:'front',label:'正面（题目 / 想记住的表达）',type:'textarea',rows:3,value:c?c.front:'',ph:'例：rose sharply ↔ surged'},
+    {id:'back',label:'背面（答案、错因 / 用法、例句）',type:'textarea',rows:4,value:c?c.back:'',ph:'例：错因是把 NOT GIVEN 当成 FALSE，原文没提到比较'},
+    {id:'source',label:'来源',value:c?c.source:'',ph:'剑 18 T1 P2 Q19'}],
+    onSubmit:v=>{if(!v.front){toast('正面不能为空');return false}const base=c?{stage:c.stage||0,next:c.next,status:c.status||'learning',lapses:c.lapses||0,createdAt:c.createdAt}:{stage:0,next:addDays(today(),1),status:'learning',lapses:0,createdAt:today()};put('cards',c?c.id:newId('c'),{...base,kind:v.kind,sec:v.sec,front:v.front,back:v.back||'',source:v.source||''});toast(c?'已保存':'已保存，明天第一次复习')},
+    onDelete:c?()=>remove('cards',c.id):null});
+}
+function grade(id,ok){const c=getRec('cards',id);if(!c)return;let d;
+  if(ok){const st=(c.stage||0)+1;d=st>=INTERVALS.length?{...c,stage:st,status:'mastered',next:''}:{...c,stage:st,next:addDays(today(),INTERVALS[st])}}
+  else d={...c,stage:0,next:addDays(today(),1),lapses:(c.lapses||0)+1};
+  delete d.u;put('cards',id,d);toast(ok?(d.status==='mastered'?'这张已掌握':'下次 '+md(d.next)):'明天再来')}
+function matForm(id){
+  const m=id?getRec('mats',id):null;
+  openSheet({title:m?'编辑资料':'收录资料',fields:[{id:'title',label:'标题',value:m?m.title:'',ph:'例：某老师 Task 2 分类思路'},
+    [{id:'kind',label:'类型',type:'select',options:[['link','链接'],['note','笔记'],['book','书']],value:m?m.kind:'link'},{id:'sec',label:'科目',type:'select',options:[['L','听力'],['R','阅读'],['W','写作'],['S','口语'],['V','词汇'],['G','综合']],value:m?m.sec:'G'}],
+    {id:'url',label:'链接（http 开头，可空）',type:'url',value:m?m.url:'',ph:'https://'},{id:'note',label:'说明 / 笔记',type:'textarea',rows:4,value:m?m.note:''}],
+    onSubmit:v=>{if(!v.title){toast('请写个标题');return false}if(v.url&&!safeUrl(v.url)){toast('链接要以 http:// 或 https:// 开头');return false}put('mats',m?m.id:newId('r'),{title:v.title,kind:v.kind,sec:v.sec,url:v.url||'',note:v.note||'',createdAt:m?m.createdAt:today()});toast('已收录')},
+    onDelete:m?()=>remove('mats',m.id):null});
+}
+function todoForm(id){
+  const x=id?getRec('todos',id):null;const p=currentPhase();
+  openSheet({title:x?'编辑任务':'加一条任务',fields:[{id:'text',label:'任务',type:'textarea',rows:2,value:x?x.text:''},{id:'phase',label:'属于哪个阶段',type:'select',options:[['','每个阶段都显示'],...PHASES.map(q=>[q.name,q.name])],value:x?x.phase:(p?p.name:'')}],
+    onSubmit:v=>{if(!v.text){toast('任务不能为空');return false}put('todos',x?x.id:newId('t'),{text:v.text,phase:v.phase,done:x?!!x.done:false,order:x?x.order:Date.now()})},
+    onDelete:x?()=>remove('todos',x.id):null});
+}
+function goalsForm(){
+  const c=cfg(),e1=c.exams[0]||{label:'一战',date:''},e2=c.exams[1]||{label:'二战',date:''};
+  openSheet({title:'考试与目标',note:'考位报好后填日期，首页会倒计时。',fields:[[{id:'e1',label:'一战日期',type:'date',value:e1.date},{id:'e2',label:'二战日期（可空）',type:'date',value:e2.date}],
+    [{id:'tO',label:'目标总分',type:'number',step:.5,value:c.target.overall},...SECS.map(s=>({id:'t'+s.k,label:'目标 '+s.name,type:'number',step:.5,value:c.target[s.k]}))],
+    [...SECS.map(s=>({id:'b'+s.k,label:'起点 '+s.name,type:'number',step:.5,value:c.baseline[s.k]}))]],
+    onSubmit:v=>{const old=getRec('meta','config')||{};put('meta','config',{...old,target:{overall:v.tO,L:v.tL,R:v.tR,W:v.tW,S:v.tS},baseline:{...c.baseline,L:v.bL,R:v.bR,W:v.bW,S:v.bS},exams:[{label:'一战',date:v.e1||''},{label:'二战',date:v.e2||''}]});toast('已保存')}});
+}
+function openSyncSetup(){
+  const has=!!SYNC.token;
+  openPanel('云同步（GitHub Gist）',`
+   <p class="small" style="margin-top:0">数据存在你自己 GitHub 账号下的一个<b>私密 Gist</b> 里，不经过任何第三方。每台设备填同一个令牌，就会自动合并。</p>
+   <h4>第一次设置</h4>
+   <ol class="steps">
+     <li>电脑或手机浏览器登录 GitHub，打开 <code>github.com/settings/tokens/new</code>（Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token）</li>
+     <li>Note 填「雅思冲刺簿」，Expiration 选 1 年，权限<b>只勾 gist</b></li>
+     <li>生成后复制以 <code>ghp_</code> 开头的令牌，粘贴到下面</li>
+     <li>在另一台设备上打开本应用，填同一个令牌</li>
+   </ol>
+   <form class="form" id="sync-form" style="margin-top:10px">
+     <div class="field"><label for="f-token">GitHub 令牌</label><input id="f-token" type="password" autocomplete="off" placeholder="${has?'已保存（重新填写可替换）':'ghp_…'}"></div>
+     <div class="formacts">${has?'<button type="button" class="btn danger" id="sync-off">停用同步</button>':''}<span class="sp"></span><button type="button" class="btn" id="sync-cancel">关闭</button>${has?'<button type="button" class="btn" id="sync-now">立即同步</button>':''}<button type="submit" class="btn primary">保存并同步</button></div>
+   </form>
+   <p class="muted small">状态：${esc(syncState.text)}${SYNC.gistId?` · Gist <code>${esc(SYNC.gistId.slice(0,8))}…</code>`:''}<br>令牌只保存在这台设备上，不会被同步。只勾 gist 权限，别人拿到也动不了你的代码仓库。</p>`,
+   ()=>{
+     $('#sync-cancel').onclick=closeSheet;
+     if(has){$('#sync-now').onclick=()=>{closeSheet();syncNow(true)};let armed=false;$('#sync-off').onclick=e=>{if(!armed){armed=true;e.target.textContent='再点一次确认';return}SYNC={};saveSync();initSyncLabel();closeSheet();toast('已停用同步，数据仍保留在本机')}}
+     $('#sync-form').onsubmit=e=>{e.preventDefault();const v=$('#f-token').value.trim();if(!v){if(has){closeSheet();syncNow(true)}else toast('先粘贴令牌');return}SYNC={token:v,gistId:'',last:0};saveSync();closeSheet();syncNow(true)};
+   });
+}
+function remindForm(){
+  const c=cfg();
+  openSheet({title:'每日提醒',note:'生成一个每天重复的日历事件文件。iPad 打开后可直接添加到日历；安卓如果打不开，用手机自带的「时钟」设每日闹钟更省事。',fields:[[{id:'time',label:'每天几点',type:'time',value:c.remind},{id:'dur',label:'时长（分钟）',type:'number',value:dailyTarget()}]],submit:'下载日历文件',
+    onSubmit:v=>{const [hh,mm]=(v.time||'20:00').split(':');const d=addDays(today(),1).replace(/-/g,'');const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
+      const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//ielts-sprint//CN','CALSCALE:GREGORIAN','BEGIN:VEVENT','UID:ielts-sprint-daily-'+Date.now()+'@local','DTSTAMP:'+stamp,`DTSTART:${d}T${hh}${mm}00`,`DURATION:PT${Math.max(15,+v.dur||60)}M`,'RRULE:FREQ=DAILY','SUMMARY:雅思时间','DESCRIPTION:打开雅思冲刺簿，学完点一下打卡。','BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:雅思时间到','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+      const old=getRec('meta','config')||{};put('meta','config',{...old,remind:v.time});download('雅思每日提醒.ics',ics,'text/calendar');toast('已生成日历文件')}});
+}
+function summaryText(){
+  const c=cfg(),t=today(),p=currentPhase(),m=latestMock();let week=0;const per={};LOGK.forEach(k=>per[k.k]=0);
+  for(let i=0;i<7;i++){const l=logById(addDays(t,-i));if(l&&l.min)LOGK.forEach(k=>{per[k.k]+=(+l.min[k.k]||0);week+=(+l.min[k.k]||0)})}
+  const mocks=list('mocks').filter(x=>x.overall!=null).sort((a,b)=>a.date.localeCompare(b.date)).slice(-5);
+  const pend=list('essays').filter(e=>e.band==null||e.band==='').length;
+  return[`雅思进度摘要（${t}）`,`目标：总分 ${fmtB(c.target.overall)}（听 ${fmtB(c.target.L)} / 读 ${fmtB(c.target.R)} / 写 ${fmtB(c.target.W)} / 说 ${fmtB(c.target.S)}）`,
+    `当前阶段：${p?p.name+'（每日目标 '+p.daily+' 分钟）':'–'}`,`考试：${c.exams.filter(e=>e.date).map(e=>e.label+' '+e.date).join('，')||'未报名'}`,
+    `近 7 天学习：${week} 分钟（${LOGK.map(k=>k.name+' '+per[k.k]).join('，')}），连续打卡 ${streak()} 天`,
+    `最近模考：${mocks.length?mocks.map(x=>`${x.date} ${x.source||''} 总${fmtB(x.overall)}（听${fmtB(x.L)} 读${fmtB(x.R)} 写${fmtB(x.W)} 说${fmtB(x.S)}）`).join('；'):'暂无'}`,
+    `复习卡：${list('cards').length} 张，今天到期 ${dueCards().length} 张；待批改作文 ${pend} 篇`].join('\n')}
+function openMenu(){
+  openPanel('设置',`<div class="menu">
+    <button class="btn" data-act="goals">考试与目标<small>考试日期、目标分、起点分</small></button>
+    <button class="btn" data-act="sync-menu">云同步<small>${esc(syncState.text)}</small></button>
+    <button class="btn" data-act="remind">每日提醒<small>生成每天重复的日历事件</small></button>
+    ${isStandalone()?'':'<button class="btn" data-act="install">装到主屏幕<small>像 App 一样打开，断网可用</small></button>'}
+    <button class="btn" data-act="summary">复制进度摘要<small>发给老师或 AI，让对方给建议</small></button>
+    <button class="btn" data-act="export">导出备份<small>下载全部数据（JSON）</small></button>
+    <label class="btn" for="imp" style="cursor:pointer">导入备份<small>与现有数据合并，不会覆盖较新的记录</small></label><input id="imp" type="file" accept=".json,application/json" hidden>
+  </div><p class="muted small" style="margin-top:12px">版本 ${APP_VERSION} · 数据保存在本机${SYNC.token?'，并同步到你的 GitHub Gist':''}</p>`,
+  ()=>{$('#imp').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(!o||!o.cols)throw 0;DB=merge(DB,o);saveDB();closeSheet();render();scheduleSync();toast('已导入并合并')}catch(e){toast('这个文件不是本应用的备份')}}});
+}
+
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('[data-tab],[data-act]');if(!t)return;
+  if(t.dataset.tab&&!t.dataset.act){setTab(t.dataset.tab);return}
+  const a=t.dataset.act,id=t.dataset.id;
+  const inSheet=!!t.closest('#sheet');
+  const acts={
+    quick:()=>quickAdd(t.dataset.k),log:()=>logForm(t.dataset.date||today()),goto:()=>setTab(t.dataset.tab),
+    mock:()=>mockForm(id),essay:()=>essayForm(id),'essay-copy':()=>essayCopy(id),card:()=>cardForm(id),mat:()=>matForm(id),
+    pass:()=>grade(id,true),fail:()=>grade(id,false),cf:()=>{S.cardFilter=t.dataset.v;render()},mf:()=>{S.matFilter=t.dataset.v;render()},
+    'todo-new':()=>todoForm(),'todo-edit':()=>todoForm(id),
+    'timer-start':()=>{if(getTimer())return;setTimer({k:t.dataset.k,start:Date.now()});render();toast('开始计时，可以锁屏，回来再点结束')},
+    'timer-stop':timerStop,'timer-cancel':()=>{if(t.dataset.armed){setTimer(null);render();toast('已放弃这次计时')}else{t.dataset.armed='1';t.textContent='再点一次放弃'}},
+    install:()=>{closeSheet();installHelp()},'install-hide':()=>{try{localStorage.setItem(HKEY,'1')}catch(e){}render()},
+    menu:openMenu,goals:goalsForm,'sync-menu':openSyncSetup,remind:remindForm,
+    summary:async()=>{closeSheet();toast(await copyText(summaryText())?'摘要已复制':'复制失败')},
+    export:()=>{download('雅思冲刺簿备份-'+today()+'.json',JSON.stringify(DB,null,1));toast('已导出')}
+  };
+  if(a==='todo'){const x=getRec('todos',id);if(x)put('todos',id,{...x,done:t.checked});return}
+  if(acts[a]){if(inSheet&&['goals','sync-menu','remind'].includes(a))closeSheet();acts[a]()}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet()});
+
+/* ================= boot ================= */
+applySeeds();
+initSyncLabel();
+{const h=(location.hash||'').slice(1);if(['today','log','score','review','mat'].includes(h))setTab(h);else render()}
+if(SYNC.token)syncNow(false);
+if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(()=>{})}
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+let lastDay=today();setInterval(()=>{if(today()!==lastDay){lastDay=today();render()}},60000);
+</script>
+</body>
+</html>

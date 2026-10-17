@@ -1,0 +1,17 @@
+{
+  "name": "雅思冲刺簿",
+  "short_name": "雅思冲刺",
+  "description": "雅思 6.0 → 7.5 备考进度：打卡、模考走势、写作批改、间隔复习卡和资料库。",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EBEFEE",
+  "theme_color": "#1E5A6E",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
